@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Tomar Asistencia - Curso {{ curso }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+</head>
+<body>
+    <h1>Tomar asistencia — Curso {{ curso }}</h1>
+    <a href="/admin/{{ curso }}">← Volver a la lista del curso</a>
+    <br><br>
+
+    <button type="button" id="btn-activar" class="boton boton-guardar">Activar cámara</button>
+    <br><br>
+    <video id="video" width="400" height="300" autoplay muted playsinline style="width:400px; height:300px; border:2px solid #ccc; border-radius:8px; display:none;"></video>
+    <br><br>
+    <button type="button" id="btn-tomar" class="boton boton-curso" style="display:none;">Tomar asistencia</button>
+
+    <h2 id="resultado" style="margin-top:20px;"></h2>
+
+    <script src="{{ url_for('static', filename='js/face-api.min.js') }}"></script>
+    <script>
+        const curso = {{ curso }};
+        const video = document.getElementById('video');
+        const resultado = document.getElementById('resultado');
+        const btnActivar = document.getElementById('btn-activar');
+        const btnTomar = document.getElementById('btn-tomar');
+        let modelosListos = false;
+
+        async function iniciarTensorFlow() {
+            try {
+                await faceapi.tf.setBackend('webgl');
+                await faceapi.tf.ready();
+            } catch (e) {
+                await faceapi.tf.setBackend('cpu');
+                await faceapi.tf.ready();
+            }
+        }
+
+        btnActivar.addEventListener('click', async function() {
+            resultado.textContent = 'Activando cámara...';
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                video.style.display = 'block';
+                resultado.textContent = 'Cargando modelos...';
+
+                if (!modelosListos) {
+                    await iniciarTensorFlow();
+                    const RUTA_MODELOS = '{{ url_for("static", filename="models") }}';
+                    await faceapi.nets.tinyFaceDetector.loadFromUri(RUTA_MODELOS);
+                    await faceapi.nets.faceLandmark68Net.loadFromUri(RUTA_MODELOS);
+                    await faceapi.nets.faceRecognitionNet.loadFromUri(RUTA_MODELOS);
+                    modelosListos = true;
+                }
+
+                btnTomar.style.display = 'inline-block';
+                resultado.textContent = 'Listo. Apunta al estudiante y presiona "Tomar asistencia".';
+            } catch (error) {
+                resultado.textContent = 'Error: ' + error.message;
+            }
+        });
+
+        btnTomar.addEventListener('click', async function() {
+            resultado.textContent = 'Reconociendo rostro...';
+
+            const deteccion = await faceapi
+                .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 }))
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+
+            if (!deteccion) {
+                resultado.textContent = '⚠️ No se detectó ningún rostro. Inténtalo de nuevo.';
+                return;
+            }
+
+            const descriptorArray = Array.from(deteccion.descriptor);
+
+            const respuesta = await fetch('/api/reconocer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ descriptor: descriptorArray, curso: curso })
+            });
+            const datos = await respuesta.json();
+
+            if (datos.exito) {
+                resultado.style.color = 'green';
+                resultado.textContent = '✅ ' + datos.nombre + ' — Asistencia registrada a las ' + datos.hora;
+            } else {
+                resultado.style.color = 'red';
+                resultado.textContent = '❌ ' + datos.mensaje;
+            }
+        });
+    </script>
+</body>
+</html>

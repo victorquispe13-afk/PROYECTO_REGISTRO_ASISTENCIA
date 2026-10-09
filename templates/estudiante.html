@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Estudiante</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+</head>
+<body class="pagina-inicio">
+    <div class="tarjeta-inicio">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo-inicio" alt="Logo">
+        <h1 class="titulo-inicio">¿Ya estás registrado?</h1>
+        <div class="fila-opciones">
+            <a href="/registro" class="boton boton-guardar">Soy nuevo, registrarme</a>
+            <a href="/buscar-qr" class="boton boton-buscar">Ya tengo mi registro</a>
+        </div>
+        <br>
+        <a href="/" style="color: white;">← Volver</a>
+    </div>
+</body>
+</html>

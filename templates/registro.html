@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro de Estudiante</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+</head>
+<body>
+    <div class="header-banner">
+        <div class="decoracion">
+            <div class="franja franja-roja"></div>
+            <div class="franja franja-amarilla"></div>
+            <div class="franja franja-verde"></div>
+        </div>
+        <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo" alt="Logo">
+        <div class="decoracion">
+            <div class="franja franja-verde"></div>
+            <div class="franja franja-amarilla"></div>
+            <div class="franja franja-roja"></div>
+        </div>
+    </div>
+
+    <h1>Registro de Estudiante</h1>
+
+    {% if error %}
+        <p style="color: red; font-weight: bold;">{{ error }}</p>
+    {% endif %}
+
+    <h3>1. Captura tu rostro</h3>
+    <p style="color:#555; font-size:0.9em;">💡 Para un mejor resultado: quítate lentes oscuros o gorra, y busca un lugar con buena luz.</p>
+    <button type="button" id="btn-activar" class="boton boton-guardar">Activar cámara</button>
+    <br><br>
+    <video id="video" width="320" height="240" autoplay muted playsinline
+           style="width:320px; height:240px; border:3px solid #ccc; border-radius:8px; display:none; background:#000;"></video>
+    <br><br>
+    <button type="button" id="btn-capturar" class="boton boton-guardar" style="display:none;">Capturar rostro</button>
+    <p id="estado-captura" style="font-weight:bold; min-height: 24px;"></p>
+
+    <h3>2. Completa tus datos</h3>
+    <form method="POST" action="/registro" id="formulario-registro">
+        <label>Nombre:</label><br>
+        <input type="text" name="nombre" required><br><br>
+
+        <label>Apellido Paterno:</label><br>
+        <input type="text" name="apellido_paterno" required><br><br>
+
+        <label>Apellido Materno:</label><br>
+        <input type="text" name="apellido_materno" required><br><br>
+
+        <label>Edad:</label><br>
+        <input type="number" name="edad" required><br><br>
+
+        <label>Curso:</label><br>
+        <select name="curso" required>
+            <option value="1">Curso 1</option>
+            <option value="2">Curso 2</option>
+            <option value="3">Curso 3</option>
+            <option value="4">Curso 4</option>
+            <option value="5">Curso 5</option>
+            <option value="6">Curso 6</option>
+        </select><br><br>
+
+        <label>Tipo de Sangre:</label><br>
+        <select name="tipo_sangre" required>
+            <option value="O+">O+</option>
+            <option value="O-">O-</option>
+            <option value="A+">A+</option>
+            <option value="A-">A-</option>
+            <option value="B+">B+</option>
+            <option value="B-">B-</option>
+            <option value="AB+">AB+</option>
+            <option value="AB-">AB-</option>
+        </select><br><br>
+
+        <input type="hidden" name="descriptor_facial" id="descriptor_facial">
+
+        <button type="submit" class="boton boton-guardar">Registrarme</button>
+        <a href="/" class="boton boton-cancelar">Cancelar</a>
+    </form>
+
+    <script src="{{ url_for('static', filename='js/face-api.min.js') }}"></script>
+    <script>
+        const video = document.getElementById('video');
+        const estado = document.getElementById('estado-captura');
+        const btnActivar = document.getElementById('btn-activar');
+        const btnCapturar = document.getElementById('btn-capturar');
+        let modelosListos = false;
+        let videoListo = false;
+
+        async function iniciarTensorFlow() {
+            try {
+                await faceapi.tf.setBackend('webgl');
+                await faceapi.tf.ready();
+                console.log('Backend: webgl');
+            } catch (e) {
+                await faceapi.tf.setBackend('cpu');
+                await faceapi.tf.ready();
+                console.log('Backend: cpu (más lento, pero funciona)');
+            }
+        }
+
+        video.addEventListener('loadeddata', function() {
+            videoListo = true;
+        });
+
+        btnActivar.addEventListener('click', async function() {
+            btnActivar.disabled = true;
+            estado.textContent = 'Pidiendo permiso de cámara...';
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                video.style.display = 'block';
+                estado.textContent = 'Cámara activada. Cargando modelos (puede tardar)...';
+
+                if (!modelosListos) {
+                    await iniciarTensorFlow();
+                    const RUTA_MODELOS = '{{ url_for("static", filename="models") }}';
+                    await faceapi.nets.tinyFaceDetector.loadFromUri(RUTA_MODELOS);
+                    await faceapi.nets.faceLandmark68Net.loadFromUri(RUTA_MODELOS);
+                    await faceapi.nets.faceRecognitionNet.loadFromUri(RUTA_MODELOS);
+                    modelosListos = true;
+                }
+
+                btnCapturar.style.display = 'inline-block';
+                estado.style.color = 'black';
+                estado.textContent = 'Listo. Mira de frente a la cámara, con buena luz, y presiona "Capturar rostro".';
+            } catch (error) {
+                estado.style.color = 'red';
+                estado.textContent = 'Error: ' + error.message;
+                console.error(error);
+                btnActivar.disabled = false;
+            }
+        });
+
+        btnCapturar.addEventListener('click', async function() {
+            if (!videoListo) {
+                estado.textContent = 'La cámara todavía está iniciando, espera 1 segundo y vuelve a intentar.';
+                return;
+            }
+
+            btnCapturar.disabled = true;
+            estado.style.color = 'black';
+            estado.textContent = 'Analizando rostro, espera...';
+
+            try {
+                const opciones = new faceapi.TinyFaceDetectorOptions({
+                inputSize: 224,
+                scoreThreshold: 0.4
+            });
+                
+
+                const deteccion = await faceapi
+                    .detectSingleFace(video, opciones)
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
+
+                if (!deteccion) {
+                    estado.style.color = 'orange';
+                    estado.textContent = '⚠️ No se detectó ningún rostro. Acércate más, mejora la luz, y presiona "Capturar rostro" de nuevo.';
+                    btnCapturar.disabled = false;
+                    return;
+                }
+
+                const descriptorArray = Array.from(deteccion.descriptor);
+                document.getElementById('descriptor_facial').value = JSON.stringify(descriptorArray);
+                estado.style.color = 'green';
+                estado.textContent = '✅ Rostro capturado correctamente. Ahora completa tus datos y da clic en "Registrarme".';
+            } catch (error) {
+                estado.style.color = 'red';
+                estado.textContent = 'Error al capturar: ' + error.message;
+                console.error(error);
+            }
+            btnCapturar.disabled = false;
+        });
+        document.getElementById('formulario-registro').addEventListener('submit', function(e) {
+    const descriptor = document.getElementById('descriptor_facial').value;
+    if (!descriptor) {
+        e.preventDefault();
+        estado.style.color = 'red';
+        estado.textContent = '⚠️ Primero debes capturar tu rostro (paso 1) antes de registrarte.';
+        window.scrollTo(0, 0);
+        return;
+    }
+    const botonEnviar = document.querySelector('#formulario-registro button[type="submit"]');
+    botonEnviar.disabled = true;
+    botonEnviar.textContent = 'Guardando...';
+});
+    </script>
+</body>
+</html>

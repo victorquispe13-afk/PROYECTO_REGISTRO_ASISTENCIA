@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Asistencia</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+</head>
+<body class="pagina-inicio">
+    <div class="tarjeta-inicio">
+        <h1 class="titulo-inicio">Registro de Asistencia</h1>
+        <div class="fila-opciones">
+            <a href="/login" class="opcion-admin">ADMINISTRADOR</a>
+            <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo-inicio" alt="Logo">
+            <a href="/estudiante" class="opcion-estudiante">ESTUDIANTE</a>
+        </div>
+        <p class="eslogan-inicio">Sé parte de nuestra familia</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de Faltas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+</head>
+<body>
+    <div class="header-banner">
+        <div class="decoracion">
+            <div class="franja franja-roja"></div>
+            <div class="franja franja-amarilla"></div>
+            <div class="franja franja-verde"></div>
+        </div>
+        <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo" alt="Logo Italo Boliviano">
+        <div class="decoracion">
+            <div class="franja franja-verde"></div>
+            <div class="franja franja-amarilla"></div>
+            <div class="franja franja-roja"></div>
+        </div>
+    </div>
+    <h1>Estudiantes que faltaron hoy ({{ fecha }})</h1>
+    <a href="/admin">Volver</a>
+    <br><br>
+    {% if faltaron|length == 0 %}
+        <p>¡Nadie faltó hoy! 🎉</p>
+    {% else %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Curso</th>
+                    <th>Nombre</th>
+                    <th>Apellido Paterno</th>
+                    <th>Apellido Materno</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for est in faltaron %}
+                <tr class="ausente">
+                    <td>{{ est.curso }}</td>
+                    <td>{{ est.nombre }}</td>
+                    <td>{{ est.apellido_paterno }}</td>
+                    <td>{{ est.apellido_materno }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</body>
+</html>

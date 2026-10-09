@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Curso {{ curso }} - Asistencia</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        .presente { background-color: #d4edda; }
+        .ausente { background-color: #f8d7da; }
+    </style>
+</head>
+<body>
+    <div class="header-banner">
+        <div class="decoracion">
+            <div class="franja franja-roja"></div>
+            <div class="franja franja-amarilla"></div>
+            <div class="franja franja-verde"></div>
+        </div>
+        <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo" alt="Logo Italo Boliviano">
+        <div class="decoracion">
+            <div class="franja franja-verde"></div>
+            <div class="franja franja-amarilla"></div>
+            <div class="franja franja-roja"></div>
+        </div>
+    </div>
+    <h1>Curso {{ curso }} — Asistencia</h1>
+    <a href="/admin">Volver a la lista de cursos</a>
+    <a href="/admin/{{ curso }}/tomar-asistencia" class="boton boton-curso">📷 Tomar asistencia con cámara</a>
+    <br><br>
+
+    <label>Ver asistencia del día:</label>
+    <input type="date" id="selector-fecha">
+    <button onclick="cambiarFecha()">Buscar</button>
+    <br><br>
+    <p>Mostrando: <strong id="fecha-mostrada"></strong></p>
+
+    <table id="tabla-asistencia">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Apellido Paterno</th>
+                <th>Apellido Materno</th>
+                <th>Hora</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody id="cuerpo-tabla"></tbody>
+    </table>
+
+    <script>
+        const curso = {{ curso }};
+        let fechaSeleccionada = null;
+        let actualizacionAutomatica = null;
+
+        async function actualizarTabla() {
+            let url = '/api/curso/' + curso;
+            if (fechaSeleccionada) {
+                url += '?fecha=' + fechaSeleccionada;
+            }
+
+            const respuesta = await fetch(url);
+            const datos = await respuesta.json();
+
+            document.getElementById('fecha-mostrada').textContent = datos.fecha;
+            document.getElementById('selector-fecha').value = datos.fecha;
+
+            const cuerpo = document.getElementById('cuerpo-tabla');
+            cuerpo.innerHTML = '';
+
+            datos.estudiantes.forEach(function(est) {
+                const fila = document.createElement('tr');
+                fila.className = est.hora ? 'presente' : 'ausente';
+                fila.innerHTML =
+                    '<td>' + est.nombre + '</td>' +
+                    '<td>' + est.apellido_paterno + '</td>' +
+                    '<td>' + est.apellido_materno + '</td>' +
+                    '<td>' + (est.hora ? est.hora : '-') + '</td>' +
+                    '<td>' + (est.hora ? 'Presente' : 'Ausente') + '</td>';
+                cuerpo.appendChild(fila);
+            });
+        }
+
+        function cambiarFecha() {
+            fechaSeleccionada = document.getElementById('selector-fecha').value;
+            actualizarTabla();
+
+            clearInterval(actualizacionAutomatica);
+            const hoy = new Date().toISOString().split('T')[0];
+            if (fechaSeleccionada === hoy) {
+                actualizacionAutomatica = setInterval(actualizarTabla, 5000);
+            }
+        }
+
+        actualizarTabla();
+        actualizacionAutomatica = setInterval(actualizarTabla, 5000);
+    </script>
+</body>
+</html>

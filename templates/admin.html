@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel de Administrador</title>
+</head>
+<body>
+    <h1>Selecciona un curso</h1>
+    <div class="header-banner">
+        <div class="decoracion">
+            <div class="franja franja-roja"></div>
+            <div class="franja franja-amarilla"></div>
+            <div class="franja franja-verde"></div>
+        </div>
+        <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo" alt="Logo Italo Boliviano">
+        <div class="decoracion">
+            <div class="franja franja-verde"></div>
+            <div class="franja franja-amarilla"></div>
+            <div class="franja franja-roja"></div>
+        </div>
+    </div>
+    <h1>Panel de Administrador</h1>
+    <a href="/admin/1" class="boton boton-curso">Curso 1</a>
+    <a href="/admin/2" class="boton boton-curso">Curso 2</a>
+    <a href="/admin/3" class="boton boton-curso">Curso 3</a>
+    <a href="/admin/4" class="boton boton-curso">Curso 4</a>
+    <a href="/admin/5" class="boton boton-curso">Curso 5</a>
+    <a href="/admin/6" class="boton boton-curso">Curso 6</a>
+        <br>
+    <a href="/admin/reporte-faltas" class="boton boton-reporte">Ver reporte de faltas de hoy</a>
+    <br>
+<a href="/admin/reporte-faltas">Ver reporte de faltas de hoy (todos los cursos)</a>
+</body>
+
+</html>
