@@ -1,4 +1,4 @@
-# PROYECTO_REGISTRO_ASISTENCIA
+git add README.md# PROYECTO_REGISTRO_ASISTENCIA
 
 ## Instrucciones para ejecutar el proyecto
 
